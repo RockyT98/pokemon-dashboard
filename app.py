@@ -1,7 +1,7 @@
 #______________________________________________________________________________________
 # POKÉMON DASHBOARD - APP.PY
 #______________________________________________________________________________________
-
+import pandas as pd
 import streamlit as st
 import plotly.express as px
 
@@ -72,7 +72,7 @@ if df_filtered.empty:
 stats = [
     "attack", "defense", "speed",
     "hp", "sp_attack", "sp_defense",
-    "Total"
+    "Total", "weight", "height"
 ]
 
 stats_ml = [
@@ -176,19 +176,110 @@ elif menu == "Search":
 #______________________________________________________________________________________
 # TYPE ANALYSIS
 #______________________________________________________________________________________
+#______________________________________________________________________________________
+# TYPE ANALYSIS
+#______________________________________________________________________________________
+
 elif menu == "Type Analysis":
+
+    st.title("Analisi Statistiche per Tipo Pokémon")
 
     stat = st.selectbox("Statistica", stats)
 
-    type_stats = analyze_by_type(df_filtered, stat)
+    tipo_col = st.radio(
+        "Analisi tipo",
+        ["type1", "type2", "Entrambi"]
+    )
 
-    best, worst = best_type_by_stat(type_stats)
+    #______________________________________________________________________________________
+    # PREPARAZIONE DATI
+    #______________________________________________________________________________________
 
-    st.metric("Best Type", best["type"])
-    st.metric("Worst Type", worst["type"])
+    if tipo_col == "Entrambi":
 
-    fig = px.bar(type_stats, x="type", y="mean")
-    st.plotly_chart(fig, use_container_width=True)
+        df_types = pd.concat([
+            df_filtered[['type1', stat]].rename(columns={'type1': 'type'}),
+            df_filtered[['type2', stat]].rename(columns={'type2': 'type'})
+        ])
+
+        df_types = df_types[
+            df_types['type'].notna() & (df_types['type'] != "None")
+        ]
+
+    else:
+
+        df_types = df_filtered[[tipo_col, stat]].rename(columns={tipo_col: 'type'})
+
+        if tipo_col == "type2":
+            df_types['type'] = df_types['type'].fillna("Puro")
+            df_types.loc[df_types['type'] == "None", 'type'] = "Puro"
+
+    #______________________________________________________________________________________
+    # AGGREGAZIONE
+    #______________________________________________________________________________________
+
+    tipo_stats = df_types.groupby('type')[stat].agg(['mean', 'count']).reset_index()
+    tipo_stats['mean'] = tipo_stats['mean'].round(2)
+    tipo_stats.sort_values(by='mean', ascending=False, inplace=True)
+
+    #______________________________________________________________________________________
+    # GRAFICO MEDIA
+    #______________________________________________________________________________________
+
+    st.subheader(f"Media di {stat} per tipo")
+
+    fig_bar = px.bar(
+        tipo_stats[tipo_stats['type'] != "Puro"],
+        x='type',
+        y='mean',
+        text='mean',
+        color='mean',
+        color_continuous_scale=px.colors.sequential.Viridis
+    )
+
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    #______________________________________________________________________________________
+    # GRAFICO COUNT
+    #______________________________________________________________________________________
+
+    st.subheader("Distribuzione Pokémon per tipo")
+
+    fig_count = px.bar(
+        tipo_stats,
+        x='type',
+        y='count',
+        text='count',
+        color='count',
+        color_continuous_scale=px.colors.sequential.Plasma
+    )
+
+    st.plotly_chart(fig_count, use_container_width=True)
+
+    #______________________________________________________________________________________
+    # INSIGHT AUTOMATICI
+    #______________________________________________________________________________________
+
+    tipo_stats_media = tipo_stats[tipo_stats['type'] != "Puro"]
+
+    max_tipo = tipo_stats_media.loc[tipo_stats_media['mean'].idxmax()]
+    min_tipo = tipo_stats_media.loc[tipo_stats_media['mean'].idxmin()]
+
+    st.markdown("---")
+
+    col1, col2 = st.columns(2)
+
+    col1.metric(
+        "Tipo migliore",
+        max_tipo['type'],
+        f"{max_tipo['mean']}"
+    )
+
+    col2.metric(
+        "Tipo peggiore",
+        min_tipo['type'],
+        f"{min_tipo['mean']}"
+    )
 
 #______________________________________________________________________________________
 # ML
