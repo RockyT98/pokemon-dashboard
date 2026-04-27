@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="acef6cc0-cffb-453f-bd75-b2f93230e24f" name="Changes" comment="">
       <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/src/analysis.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/src/data_loader.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/src/filters.py" afterDir="false" />
