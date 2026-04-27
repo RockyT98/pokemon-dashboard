@@ -13,7 +13,7 @@ L'applicazione permette di:
 
 ## Demo
 
-Il link alla demo interattiva sarà disponibile dopo il deploy su Streamlit Cloud.
+https://pokemon-dashboard-btkaws2e3aippkszerfdq8.streamlit.app/
 
 ---
 
