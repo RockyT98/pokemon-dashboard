@@ -37,6 +37,7 @@ https://pokemon-dashboard-btkaws2e3aippkszerfdq8.streamlit.app/
 ### Type Analysis
 - confronto tra tipi Pokémon
 - medie e distribuzioni
+- analisi avanzata: confronto tra type1, type2 e combinazione di entrambi
 
 ### Machine Learning
 - predizione di statistiche (Attack, Defense, ecc.)
