@@ -168,7 +168,7 @@ elif menu == "Search":
                 "generation", "category",
                 "attack", "defense", "speed",
                 "hp", "sp_attack", "sp_defense",
-                "Total"
+                "Total", "height", "weight"
             ]
 
             st.dataframe(result[cols], use_container_width=True)
