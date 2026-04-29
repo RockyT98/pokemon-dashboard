@@ -1,13 +1,8 @@
 # Pokémon Data Analysis & Machine Learning Dashboard
 
-Progetto di data analysis e machine learning sviluppato in Python per esplorare, analizzare e interpretare le statistiche dei Pokémon.
+Progetto di data analysis e machine learning sviluppato in Python per esplorare, analizzare e interpretare le statistiche dei Pokémon tramite una dashboard interattiva.
 
-L'applicazione permette di:
-- analizzare dati statistici
-- filtrare Pokémon per categorie e generazioni
-- visualizzare correlazioni
-- generare insight automatici
-- predire statistiche tramite modelli di Machine Learning
+L’app permette di trasformare un dataset Pokémon in insight visivi, statistici e predittivi usando Streamlit, Plotly e Scikit-learn.
 
 ---
 
@@ -21,43 +16,66 @@ https://pokemon-dashboard-btkaws2e3aippkszerfdq8.streamlit.app/
 
 ### Overview
 - KPI principali (media, massimo, distribuzione)
+- analisi rapide delle statistiche Pokémon
 - istogrammi interattivi
 
+---
+
 ### Top / Flop
-- migliori e peggiori Pokémon per statistica
-- informazioni dettagliate:
+- migliori e peggiori Pokémon per ogni statistica
+- dettagli completi:
   - generazione
   - tipo
   - categoria (ordinario, leggendario, mitico, ultracreatura)
 
+---
+
 ### Search
 - ricerca Pokémon per nome
-- visualizzazione pulita delle statistiche
+- visualizzazione completa delle statistiche
+
+---
 
 ### Type Analysis
 - confronto tra tipi Pokémon
-- medie e distribuzioni
-- analisi avanzata: confronto tra type1, type2 e combinazione di entrambi
+- analisi avanzata:
+  - type1
+  - type2
+  - combinazione dei due
+- medie, distribuzioni e ranking per tipo
+
+---
+
+### Generational Analysis
+- confronto tra generazioni Pokémon
+- Pokémon più forti e più deboli per generazione
+- distribuzione delle statistiche nel tempo
+
+---
 
 ### Machine Learning
-- predizione di statistiche (Attack, Defense, ecc.)
+- predizione statistiche Pokémon (Attack, Defense, Speed, ecc.)
 - modello: Random Forest Regressor
 - metriche:
-  - MAE (errore medio)
+  - MAE (errore medio assoluto)
   - R² Score
-- feature importance
+- feature importance delle variabili
+
+---
 
 ### Correlation & Insights
 - matrice di correlazione tra statistiche
 - insight automatici:
   - relazioni tra variabili
-  - migliori predittori
-  - pattern nei dati
+  - pattern nascosti nei dati
+  - migliori predittori per ogni statistica
+
+---
 
 ### AI Summary
 - sintesi automatica del dataset:
+  - statistiche più variabili
   - relazioni principali
-  - statistiche dominanti
   - predicibilità delle variabili
 
 ---
@@ -75,38 +93,51 @@ https://pokemon-dashboard-btkaws2e3aippkszerfdq8.streamlit.app/
 
 ## Installazione
 
-1. Clona il repository:
+### 1. Clona repository
+```bash
 git clone https://github.com/RockyT98/pokemon-dashboard.git
 cd pokemon-dashboard
+```
 
-2. Crea ambiente virtuale:
+### 2. Crea ambiente virtuale
+```bash
 python -m venv .venv
+```
 
-3. Attiva ambiente:
-Windows:
+### 3. Clona repository
+#### Windows
+```bash
 .venv\Scripts\activate
-
-Mac/Linux:
+```
+#### Mac/Linux:
+```bash
 source .venv/bin/activate
-
-4. Installa dipendenze:
+```
+### 4. Installa dipendenze
+```bash
 pip install -r requirements.txt
-
-5. Avvia l’app:
+```
+### 5. Avvia app
+```bash
 streamlit run app.py
-
+```
 ---
 
-## Obiettivi del progetto
-
+## Obiettivo del Progetto
 Questo progetto è stato sviluppato per:
-- migliorare competenze in Data Analysis
-- applicare Machine Learning su dataset reali
-- costruire una dashboard interattiva
-- trasformare dati in insight leggibili
+
+- applicare Data Analysis su dataset reali
+- costruire una dashboard interattiva completa
+- integrare Machine Learning in un sistema reale
+- trasformare dati complessi in insight leggibili
 
 ---
-
 ## Autore
-
 Progetto sviluppato da Rocco Tarantino
+```bash
+GitHub: https://github.com/RockyT98
+```
+
+
+
+

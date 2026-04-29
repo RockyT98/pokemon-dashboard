@@ -30,7 +30,8 @@ df["category"] = df.apply(get_pokemon_category, axis=1)
 #______________________________________________________________________________________
 menu = st.sidebar.radio(
     "Menu",
-    ["Overview", "Top/Flop", "Search", "Type Analysis", "ML", "AI Insights", "Correlation & Insights"]
+    ["Overview", "Top/Flop", "Search", "Type Analysis", "Generational Analysis", "ML",
+     "AI Insights", "Correlation & Insights"]
 )
 
 #______________________________________________________________________________________
@@ -176,111 +177,164 @@ elif menu == "Search":
 #______________________________________________________________________________________
 # TYPE ANALYSIS
 #______________________________________________________________________________________
-#______________________________________________________________________________________
-# TYPE ANALYSIS
-#______________________________________________________________________________________
-
 elif menu == "Type Analysis":
 
     st.title("Analisi Statistiche per Tipo Pokémon")
 
-    stat = st.selectbox("Statistica", stats)
+    stat = st.selectbox(
+        "Statistica",
+        ["attack", "defense", "speed", "hp", "sp_attack", "sp_defense", "Total"]
+    )
 
     tipo_col = st.radio(
-        "Analisi tipo",
+        "Tipo di analisi",
         ["type1", "type2", "Entrambi"]
     )
 
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
     # PREPARAZIONE DATI
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
 
     if tipo_col == "Entrambi":
 
         df_types = pd.concat([
-            df_filtered[['type1', stat]].rename(columns={'type1': 'type'}),
-            df_filtered[['type2', stat]].rename(columns={'type2': 'type'})
+            df_filtered[['name', 'type1', 'attack', 'defense', 'speed', 'hp',
+                         'sp_attack', 'sp_defense', 'Total']].rename(columns={'type1': 'type'}),
+            df_filtered[['name', 'type2', 'attack', 'defense', 'speed', 'hp',
+                         'sp_attack', 'sp_defense', 'Total']].rename(columns={'type2': 'type'})
         ])
 
-        df_types = df_types[
-            df_types['type'].notna() & (df_types['type'] != "None")
-        ]
+        df_types = df_types.dropna(subset=["type"])
+        df_types = df_types[df_types["type"] != "None"]
 
     else:
 
-        df_types = df_filtered[[tipo_col, stat]].rename(columns={tipo_col: 'type'})
+        df_types = df_filtered[
+            ['name', tipo_col, 'attack', 'defense', 'speed', 'hp',
+             'sp_attack', 'sp_defense', 'Total']
+        ].rename(columns={tipo_col: 'type'})
 
-        if tipo_col == "type2":
-            df_types['type'] = df_types['type'].fillna("Puro")
-            df_types.loc[df_types['type'] == "None", 'type'] = "Puro"
+        df_types = df_types.dropna(subset=["type"])
+        df_types = df_types[df_types["type"] != "None"]
 
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
     # AGGREGAZIONE
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
 
-    tipo_stats = df_types.groupby('type')[stat].agg(['mean', 'count']).reset_index()
-    tipo_stats['mean'] = tipo_stats['mean'].round(2)
-    tipo_stats.sort_values(by='mean', ascending=False, inplace=True)
+    tipo_stats = df_types.groupby("type")[stat].agg(["mean", "count"]).reset_index()
+    tipo_stats["mean"] = tipo_stats["mean"].round(2)
+    tipo_stats.sort_values(by="mean", ascending=False, inplace=True)
 
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
     # GRAFICO MEDIA
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
 
-    st.subheader(f"Media di {stat} per tipo")
+    st.subheader(f"Media {stat} per tipo")
 
-    fig_bar = px.bar(
-        tipo_stats[tipo_stats['type'] != "Puro"],
-        x='type',
-        y='mean',
-        text='mean',
-        color='mean',
+    fig_mean = px.bar(
+        tipo_stats,
+        x="type",
+        y="mean",
+        text="mean",
+        color="mean",
         color_continuous_scale=px.colors.sequential.Viridis
     )
 
-    st.plotly_chart(fig_bar, use_container_width=True)
+    st.plotly_chart(fig_mean, use_container_width=True)
 
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
     # GRAFICO COUNT
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
 
-    st.subheader("Distribuzione Pokémon per tipo")
+    st.subheader("Numero Pokémon per tipo")
 
     fig_count = px.bar(
         tipo_stats,
-        x='type',
-        y='count',
-        text='count',
-        color='count',
+        x="type",
+        y="count",
+        text="count",
+        color="count",
         color_continuous_scale=px.colors.sequential.Plasma
     )
 
     st.plotly_chart(fig_count, use_container_width=True)
 
-    #______________________________________________________________________________________
-    # INSIGHT AUTOMATICI
-    #______________________________________________________________________________________
+    # ------------------------------------------------------------------
+    # INSIGHT GENERALI
+    # ------------------------------------------------------------------
 
-    tipo_stats_media = tipo_stats[tipo_stats['type'] != "Puro"]
-
-    max_tipo = tipo_stats_media.loc[tipo_stats_media['mean'].idxmax()]
-    min_tipo = tipo_stats_media.loc[tipo_stats_media['mean'].idxmin()]
+    max_type = tipo_stats.loc[tipo_stats["mean"].idxmax()]
+    min_type = tipo_stats.loc[tipo_stats["mean"].idxmin()]
 
     st.markdown("---")
 
     col1, col2 = st.columns(2)
 
     col1.metric(
-        "Tipo migliore",
-        max_tipo['type'],
-        f"{max_tipo['mean']}"
+        "Miglior tipo",
+        max_type["type"],
+        str(max_type["mean"])
     )
 
     col2.metric(
-        "Tipo peggiore",
-        min_tipo['type'],
-        f"{min_tipo['mean']}"
+        "Peggior tipo",
+        min_type["type"],
+        str(min_type["mean"])
     )
 
+    # ------------------------------------------------------------------
+    # ANALISI DETTAGLIATA PER TIPO
+    # ------------------------------------------------------------------
+
+    st.subheader("Analisi dettagliata per tipo")
+
+    for t in sorted(df_types["type"].unique()):
+
+        st.markdown("---")
+        st.markdown(f"## Tipo: {t}")
+
+        type_df = df_types[df_types["type"] == t]
+
+        col1, col2 = st.columns(2)
+
+        # =========================
+        # TOTAL
+        # =========================
+        best_total = type_df.loc[type_df["Total"].idxmax()]
+        worst_total = type_df.loc[type_df["Total"].idxmin()]
+
+        st.markdown("### Total")
+
+        st.write(f"Migliore: {best_total['name']} ({best_total['Total']})")
+        st.write(f"Peggiore: {worst_total['name']} ({worst_total['Total']})")
+
+
+        with col1:
+
+            for stat_name in ["attack", "defense", "speed"]:
+                best = type_df.loc[type_df[stat_name].idxmax()]
+                worst = type_df.loc[type_df[stat_name].idxmin()]
+
+                st.markdown(f"**{stat_name.upper()}**")
+
+                st.write(f"Massimo: {best['name']} ({best[stat_name]})")
+                st.write(f"Minimo: {worst['name']} ({worst[stat_name]})")
+
+                st.write("---")
+
+
+        with col2:
+
+            for stat_name in ["sp_attack", "sp_defense", "hp"]:
+                best = type_df.loc[type_df[stat_name].idxmax()]
+                worst = type_df.loc[type_df[stat_name].idxmin()]
+
+                st.markdown(f"**{stat_name.upper()}**")
+
+                st.write(f"Massimo: {best['name']} ({best[stat_name]})")
+                st.write(f"Minimo: {worst['name']} ({worst[stat_name]})")
+
+                st.write("---")
 #______________________________________________________________________________________
 # ML
 #______________________________________________________________________________________
@@ -343,20 +397,111 @@ elif menu == "AI Insights":
         st.write(f"Worst Type: {info['worst_type']} ({info['worst_value']})")
 
 #______________________________________________________________________________________
+# GENERATIONAL ANALYSIS
+#______________________________________________________________________________________
+elif menu == "Generational Analysis":
+    st.header("Generational Analysis")
+
+    # __________________________
+    # GRAFICO MEDIA TOTAL PER GEN
+    # __________________________
+
+    gen_stats = df_filtered.groupby("generation")["Total"].mean().reset_index()
+
+    fig1 = px.bar(
+        gen_stats,
+        x="generation",
+        y="Total",
+        title="Media Total per Generazione",
+        color="generation",
+        color_continuous_scale=px.colors.sequential.Plasma
+    )
+
+    fig1.update_layout(title_x=0.5, template="plotly_white", showlegend=False)
+    st.plotly_chart(fig1, use_container_width=True)
+
+    # __________________________
+    # NUMERO POKÉMON PER GEN
+    # __________________________
+    gen_count = df_filtered["generation"].value_counts().sort_index().reset_index()
+    gen_count.columns = ["generation", "count"]
+
+    fig2 = px.bar(
+        gen_count,
+        x="generation",
+        y="count",
+        title="Numero Pokémon per Generazione",
+        color="count",
+        color_continuous_scale=px.colors.sequential.Plasma
+    )
+
+    fig2.update_layout(title_x=0.5, template="plotly_white", showlegend=False)
+    st.plotly_chart(fig2, use_container_width=True)
+
+    #__________________________
+    # INSIGHT PER GENERAZIONE
+    #__________________________
+    st.subheader("Analisi Dettagliata per Generazione")
+
+    for gen in sorted(df_filtered["generation"].unique()):
+
+        st.markdown("---")
+
+        gen_df = df_filtered[df_filtered["generation"] == gen]
+
+        st.markdown(f"### Generazione {gen}")
+
+        col1, col2 = st.columns(2)
+        # __________________________
+        # TOTAL
+        # __________________________
+        best_total_gen = gen_df.loc[gen_df["Total"].idxmax()]
+        worst_total_gen = gen_df.loc[gen_df["Total"].idxmin()]
+
+        st.markdown("**Total**")
+        st.write(f"Migliore: {best_total_gen['name']} ({best_total_gen['Total']})")
+        st.write(f"Peggiore: {worst_total_gen['name']} ({worst_total_gen['Total']})")
+
+        with col1:
+            for stat_name in ["attack", "defense", "speed"]:
+
+                best = gen_df.loc[gen_df[stat_name].idxmax()]
+                worst = gen_df.loc[gen_df[stat_name].idxmin()]
+                st.markdown(f"**{stat_name.upper()}**")
+
+                st.write(f"Massimo: {best['name']} ({best[stat_name]})")
+                st.write(f"Minimo: {worst['name']} ({worst[stat_name]})")
+
+                st.write("---")
+
+        with col2:
+            for stat_name in ["sp_attack", "sp_defense","hp"]:
+
+                best = gen_df.loc[gen_df[stat_name].idxmax()]
+                worst = gen_df.loc[gen_df[stat_name].idxmin()]
+                st.markdown(f"**{stat_name.upper()}**")
+
+                st.write(f"Massimo: {best['name']} ({best[stat_name]})")
+                st.write(f"Minimo: {worst['name']} ({worst[stat_name]})")
+
+                st.write("---")
+
+
+#______________________________________________________________________________________
 # CORRELATION & INSIGHTS
 #______________________________________________________________________________________
+#______________________________________________________________________________________
+# CORRELATION & INSIGHTS
+#______________________________________________________________________________________
+
 elif menu == "Correlation & Insights":
 
     st.header("Correlation Analysis & AI Insights")
 
-    #__________________________
-    # SELEZIONE STATISTICA
-    #__________________________
-    selected_stat = st.selectbox("Seleziona statistica", ["Tutte"] + stats_ml)
-
-    #__________________________
+    #____________________________________________________
     # CORRELATION MATRIX
-    #__________________________
+    #____________________________________________________
+
     st.subheader("Correlation Matrix")
 
     corr = df_filtered[stats_ml].corr()
@@ -370,15 +515,15 @@ elif menu == "Correlation & Insights":
 
     st.plotly_chart(fig, use_container_width=True)
 
-    #__________________________
-    # AI INSIGHTS
-    #__________________________
-    st.subheader("AI Insights")
+    #____________________________________________________
+    # CORRELATION INSIGHTS (CLASSICI)
+    #____________________________________________________
+
+    st.subheader("Correlation Insights")
 
     insights = []
     threshold = 0.6
 
-    # 1. CORRELAZIONI
     for col in corr.columns:
         for idx in corr.index:
 
@@ -387,23 +532,16 @@ elif menu == "Correlation & Insights":
 
                 if abs(value) >= threshold:
 
-                    if selected_stat != "Tutte" and col != selected_stat and idx != selected_stat:
-                        continue
-
                     if value > 0:
-                        insights.append(
-                            f"{col} e {idx} crescono insieme ({round(value,2)})."
-                        )
+                        insights.append(f"{col} e {idx} crescono insieme ({round(value,2)}).")
                     else:
-                        insights.append(
-                            f"{col} cresce mentre {idx} diminuisce ({round(value,2)})."
-                        )
+                        insights.append(f"{col} cresce mentre {idx} diminuisce ({round(value,2)}).")
 
-    # 2. MIGLIOR PREDITTOR
+    #____________________________________________________
+    # MIGLIORI PREDITTORI
+    #____________________________________________________
+
     for target in stats_ml:
-
-        if selected_stat != "Tutte" and target != selected_stat:
-            continue
 
         correlations = corr[target].drop(target)
 
@@ -411,99 +549,121 @@ elif menu == "Correlation & Insights":
         best_value = correlations[best_feature]
 
         if best_value > 0:
-            insights.append(
-                f"{best_feature} è il miglior indicatore per {target}."
-            )
+            insights.append(f"{best_feature} è il miglior indicatore per {target}.")
         else:
-            insights.append(
-                f"{best_feature} è inversamente legata a {target}."
-            )
+            insights.append(f"{best_feature} è inversamente legata a {target}.")
 
-    # 3. VARIABILITÀ
-    for stat in stats_ml:
+    #____________________________________________________
+    # OUTPUT CORRELATIONS
+    #____________________________________________________
 
-        if selected_stat != "Tutte" and stat != selected_stat:
-            continue
-
-        std = df_filtered[stat].std()
-        mean = df_filtered[stat].mean()
-
-        if std > mean * 0.5:
-            insights.append(f"{stat} varia molto tra i Pokémon.")
-        else:
-            insights.append(f"{stat} è abbastanza stabile.")
-
-    #__________________________
-    # OUTPUT
-    #__________________________
     insights = list(set(insights))
 
-    if insights:
-        for text in insights[:12]:
-            st.write(f"- {text}")
-    else:
-        st.info("Nessun insight rilevante trovato")
+    for text in insights[:12]:
+        st.write(f"- {text}")
 
-    #__________________________
-    # AI SUMMARY
-    #__________________________
-    st.subheader("AI Summary")
+    #____________________________________________________
+    # PATTERN PER GENERAZIONE
+    #____________________________________________________
 
-    summary = []
+    st.subheader("Pattern per generazione")
 
-    # 1. STATISTICA PIÙ VARIABILE
-    variability = {
-        stat: df_filtered[stat].std()
-        for stat in stats_ml
-    }
-
-    most_variable = max(variability, key=variability.get)
-    least_variable = min(variability, key=variability.get)
-
-    summary.append(
-        f"La statistica più variabile è {most_variable}, mentre la più stabile è {least_variable}."
-    )
-
-    # 2. RELAZIONE PRINCIPALE
-    corr_values = corr.copy()
-
-    for col in corr_values.columns:
-        corr_values.loc[col, col] = 0  # elimina auto-correlazione
-
-    max_corr = corr_values.abs().stack().idxmax()
-    val = corr.loc[max_corr]
-
-    if val > 0:
-        summary.append(
-            f"La relazione più forte è tra {max_corr[0]} e {max_corr[1]}, che crescono insieme."
-        )
-    else:
-        summary.append(
-            f"La relazione più forte è tra {max_corr[0]} e {max_corr[1]}, ma sono inversamente correlate."
-        )
-
-    # 3. VARIABILITÀ (solo se significativa)
-    for stat in stats_ml:
-
-        std = df_filtered[stat].std()
-        mean = df_filtered[stat].mean()
-
-        if std > mean * 0.6:
-            insights.append(f"{stat} varia molto tra i Pokémon.")
-
-    # 4. STAT PIÙ PREVEDIBILE
-    predictability = {}
+    gen_stats = df_filtered.groupby("generation")[stats_ml].mean()
 
     for stat in stats_ml:
-        correlations = corr[stat].drop(stat)
-        predictability[stat] = correlations.abs().max()
 
-    most_predictable = max(predictability, key=predictability.get)
+        best_gen = gen_stats[stat].idxmax()
+        worst_gen = gen_stats[stat].idxmin()
 
-    summary.append(
-        f"La statistica più prevedibile è {most_predictable}, grazie alle forti correlazioni con le altre."
+        st.write(f"{stat.upper()}")
+        st.write(f"- Migliore generazione: Gen {best_gen} ({round(gen_stats.loc[best_gen, stat], 2)})")
+        st.write(f"- Peggiore generazione: Gen {worst_gen} ({round(gen_stats.loc[worst_gen, stat], 2)})")
+
+    # ____________________________________________________
+    # DISTRIBUZIONE TIPI PER GENERAZIONE
+    # ____________________________________________________
+
+    st.subheader("Distribuzione tipi per generazione")
+
+    # prendiamo type1 e type2 insieme (più corretto)
+    df_types = pd.concat([
+        df_filtered[["generation", "type1"]].rename(columns={"type1": "type"}),
+        df_filtered[["generation", "type2"]].rename(columns={"type2": "type"})
+    ])
+
+    df_types = df_types.dropna()
+    df_types = df_types[df_types["type"] != "None"]
+
+    # lista tipi unici
+    all_types = sorted(df_types["type"].unique())
+
+    for t in all_types:
+        st.markdown("---")
+        st.markdown(f"### Tipo: {t}")
+
+        type_df = df_types[df_types["type"] == t]
+
+        # conteggio per generazione
+        gen_counts = type_df["generation"].value_counts().sort_index().reset_index()
+        gen_counts.columns = ["generation", "count"]
+
+        # generazioni con max e min presenza
+        max_gen = gen_counts.loc[gen_counts["count"].idxmax()]
+        min_gen = gen_counts.loc[gen_counts["count"].idxmin()]
+
+        # GRAFICO
+        fig = px.bar(
+            gen_counts,
+            x="generation",
+            y="count",
+            title=f"Distribuzione del tipo {t} per generazione",
+            color="count",
+            color_continuous_scale=px.colors.sequential.Viridis
+        )
+
+        fig.update_layout(
+            title_x=0.5,
+            template="plotly_white",
+            showlegend=False
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # INSIGHT TESTUALE
+        col1, col2 = st.columns(2)
+
+        col1.metric(
+            "Generazione più presente",
+            f"Gen {max_gen['generation']}",
+            f"{max_gen['count']} Pokémon"
+        )
+
+        col2.metric(
+            "Generazione meno presente",
+            f"Gen {min_gen['generation']}",
+            f"{min_gen['count']} Pokémon"
+        )
+
+    #____________________________________________________
+    # INSIGHT GLOBALI
+    #____________________________________________________
+
+    st.subheader("Insight globali")
+
+    # Pokémon più forti per generazione
+    for gen in sorted(df_filtered["generation"].unique()):
+
+        gen_df = df_filtered[df_filtered["generation"] == gen]
+
+        strongest = gen_df.loc[gen_df["Total"].idxmax()]
+
+        st.write(
+            f"Gen {gen}: Pokémon più forte = {strongest['name']} ({strongest['Total']})"
+        )
+
+    # Tipo più comune globale
+    type_counts = df_filtered["type1"].value_counts()
+
+    st.write(
+        f"Tipo più comune nel dataset: {type_counts.idxmax()} ({type_counts.max()} Pokémon)"
     )
-
-    # OUTPUT
-    for line in summary:
-        st.write(f"- {line}")
